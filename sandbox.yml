@@ -136,6 +136,7 @@
     - { role: pgadmin, tags: ['pgadmin'] }
     - { role: photoprism, tags: ['photoprism'] }
     - { role: phpmyadmin, tags: ['phpmyadmin'] }
+    - { role: plane, tags: ['plane'] }
     - { role: plex_dupefinder, tags: ['plex-dupefinder'] }
     - { role: plex_meta_manager, tags: ['plex-meta-manager', 'pmm-kometa-migration'] }
     - { role: plex_patrol, tags: ['plex-patrol'] }

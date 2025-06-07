@@ -1,0 +1,272 @@
+services:
+  {{ plane_name }}-web:
+    container_name: {{ plane_name }}-web
+    image: {{ plane_docker_image_web }}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    command: node web/server.js web
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    depends_on:
+      - {{ plane_name }}-api
+      - {{ plane_name }}-worker
+    restart: {{ plane_docker_restart_policy }}
+    labels:
+      traefik.enable: "{{ plane_traefik_enabled }}"
+      traefik.http.routers.{{ plane_name }}-web.rule: "Host(`{{ plane_web_url_traefik }}`)"
+      traefik.http.routers.{{ plane_name }}-web.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-web.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
+      traefik.http.routers.{{ plane_name }}-web.tls: "{{ plane_traefik_tls_enabled }}"
+      traefik.http.routers.{{ plane_name }}-web.tls.certresolver: "{{ plane_traefik_certresolver }}"
+      traefik.http.services.{{ plane_name }}-web.loadbalancer.server.port: "{{ plane_traefik_web_port }}"
+      traefik.http.routers.{{ plane_name }}-web.service: "{{ plane_name }}-web"
+
+  {{ plane_name }}-space:
+    container_name: {{ plane_name }}-space
+    image: {{ plane_docker_image_space }}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    command: node space/server.js space
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    depends_on:
+      - {{ plane_name }}-api
+      - {{ plane_name }}-worker
+      - {{ plane_name }}-web
+    restart: {{ plane_docker_restart_policy }}
+    labels:
+      traefik.enable: "{{ plane_traefik_enabled }}"
+      traefik.http.routers.{{ plane_name }}-space.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/spaces/`)"
+      traefik.http.routers.{{ plane_name }}-space.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-space.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
+      traefik.http.routers.{{ plane_name }}-space.service: "{{ plane_name }}-space"
+      traefik.http.routers.{{ plane_name }}-space.tls: "{{ plane_traefik_tls_enabled }}"
+      traefik.http.routers.{{ plane_name }}-space.tls.certresolver: "{{ plane_traefik_certresolver }}"
+      traefik.http.services.{{ plane_name }}-space.loadbalancer.server.port: "{{ plane_traefik_space_port }}"
+
+  {{ plane_name }}-admin:
+    container_name: {{ plane_name }}-admin
+    image: {{ plane_docker_image_admin }}
+    command: node admin/server.js admin
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    depends_on:
+      - {{ plane_name }}-api
+      - {{ plane_name }}-web
+    restart: {{ plane_docker_restart_policy }}
+    labels:
+      traefik.enable: "{{ plane_traefik_enabled }}"
+      traefik.http.routers.{{ plane_name }}-admin.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/god-mode/`)"
+      traefik.http.routers.{{ plane_name }}-admin.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-admin.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
+      traefik.http.routers.{{ plane_name }}-admin.service: "{{ plane_name }}-admin"
+      traefik.http.routers.{{ plane_name }}-admin.tls: "{{ plane_traefik_tls_enabled }}"
+      traefik.http.routers.{{ plane_name }}-admin.tls.certresolver: "{{ plane_traefik_certresolver }}"
+      traefik.http.services.{{ plane_name }}-admin.loadbalancer.server.port: "{{ plane_traefik_admin_port }}"  
+
+  {{ plane_name }}-live:
+    container_name: {{ plane_name }}-live
+    image: {{ plane_docker_image_live }}
+    command: node live/dist/server.js live
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    environment:
+      {{ plane_docker_envs_live | to_nice_yaml(indent=2) | indent(6) }}
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    depends_on:
+      - {{ plane_name }}-api
+      - {{ plane_name }}-web
+    restart: {{ plane_docker_restart_policy }}
+    labels:
+      traefik.enable: "{{ plane_traefik_enabled }}"
+      traefik.http.routers.{{ plane_name }}-live.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/live/`)"
+      traefik.http.routers.{{ plane_name }}-live.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-live.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
+      traefik.http.routers.{{ plane_name }}-live.service: "{{ plane_name }}-live" # NEW
+      traefik.http.routers.{{ plane_name }}-live.tls: "{{ plane_traefik_tls_enabled }}"
+      traefik.http.routers.{{ plane_name }}-live.tls.certresolver: "{{ plane_traefik_certresolver }}"
+      traefik.http.services.{{ plane_name }}-live.loadbalancer.server.port: "{{ plane_traefik_live_port }}"
+
+  {{ plane_name }}-api:
+    container_name: {{ plane_name }}-api
+    image: {{ plane_docker_image_backend }}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    command: ./bin/docker-entrypoint-api.sh
+    volumes:
+      {{ plane_docker_volumes | to_nice_yaml(indent=2) | indent(6) }}      {{ plane_docker_volumes_api | to_nice_yaml(indent=2) | indent(6) }}
+    environment:
+      {{ plane_docker_envs_all | to_nice_yaml(indent=2) | indent(6) }}
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    depends_on:
+      - {{ plane_name }}-postgres
+      - {{ plane_name }}-redis
+      - {{ plane_name }}-rabbitmq
+    restart: {{ plane_docker_restart_policy }}
+    labels:
+      traefik.enable: "{{ plane_traefik_enabled }}"
+      traefik.http.routers.{{ plane_name }}-api.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/api/`) || PathPrefix(`/auth/`)"
+      traefik.http.routers.{{ plane_name }}-api.middlewares: "{{ plane_name }}-api-cors-headers" # NEW
+      # traefik.http.routers.{{ plane_name }}-api.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-api.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
+      traefik.http.routers.{{ plane_name }}-api.service: "{{ plane_name }}-api" # NEW
+      traefik.http.routers.{{ plane_name }}-api.tls: "{{ plane_traefik_tls_enabled }}"
+      traefik.http.routers.{{ plane_name }}-api.tls.certresolver: "{{ plane_traefik_certresolver }}"
+      traefik.http.services.{{ plane_name }}-api.loadbalancer.server.port: "{{ plane_traefik_api_port }}"
+      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolallowmethods: "GET,OPTIONS,PUT,POST,DELETE,PATCH" # NEW
+      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolalloworiginlist: "{{ plane_web_url }}" # NEW
+      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolallowcredentials: "true" # NEW
+      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolallowheaders: "*" # NEW
+
+
+  {{ plane_name }}-worker:
+    container_name: {{ plane_name }}-worker
+    image: {{ plane_docker_image_backend }}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    command: ./bin/docker-entrypoint-worker.sh
+    volumes:
+      {{ plane_docker_volumes | to_nice_yaml(indent=2) | indent(6) }}      {{ plane_docker_volumes_worker | to_nice_yaml(indent=2) | indent(6) }}
+    environment:
+      {{ plane_docker_envs_all | to_nice_yaml(indent=2) | indent(6) }}
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    depends_on:
+      - {{ plane_name }}-api
+      - {{ plane_name }}-postgres
+      - {{ plane_name }}-redis
+      - {{ plane_name }}-rabbitmq
+    restart: {{ plane_docker_restart_policy }}
+
+  {{ plane_name }}-beat-worker:
+    container_name: {{ plane_name }}-beat-worker
+    image: {{ plane_docker_image_backend }}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    command: ./bin/docker-entrypoint-beat.sh
+    volumes:
+      {{ plane_docker_volumes | to_nice_yaml(indent=2) | indent(6) }}      {{ plane_docker_volumes_beat_worker | to_nice_yaml(indent=2) | indent(6) }}
+    environment:
+      {{ plane_docker_envs_all | to_nice_yaml(indent=2) | indent(6) }}
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    depends_on:
+      - {{ plane_name }}-api
+      - {{ plane_name }}-postgres
+      - {{ plane_name }}-redis
+      - {{ plane_name }}-rabbitmq
+    restart: {{ plane_docker_restart_policy }}
+
+
+  {{ plane_name }}-migrator:
+    container_name: {{ plane_name }}-migrator
+    image: {{ plane_docker_image_backend }}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    command: ./bin/docker-entrypoint-migrator.sh
+    volumes:
+      {{ plane_docker_volumes | to_nice_yaml(indent=2) | indent(6) }}      {{ plane_docker_volumes_migrator | to_nice_yaml(indent=2) | indent(6) }}
+    environment:
+      {{ plane_docker_envs_all | to_nice_yaml(indent=2) | indent(6) }}
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    depends_on:
+      - {{ plane_name }}-postgres
+      - {{ plane_name }}-redis
+    restart: {{ plane_docker_restart_policy }}
+
+
+  {{ plane_name }}-postgres:
+    container_name: {{ plane_name }}-postgres
+    image: {{ plane_docker_image_postgres }}
+    command: postgres -c 'max_connections=1000'
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      {{ plane_docker_volumes | to_nice_yaml(indent=2) | indent(6) }}      {{ plane_docker_volumes_postgres | to_nice_yaml(indent=2) | indent(6) }}
+    environment:
+      {{ plane_docker_envs_postgres | to_nice_yaml(indent=2) | indent(6) }}
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    restart: {{ plane_docker_restart_policy }}
+
+  {{ plane_name }}-redis:
+    container_name: {{ plane_name }}-redis
+    image: {{ plane_docker_image_redis }}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      {{ plane_docker_volumes | to_nice_yaml(indent=2) | indent(6) }}      {{ plane_docker_volumes_redis | to_nice_yaml(indent=2) | indent(6) }}
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    restart: {{ plane_docker_restart_policy }}
+
+  {{ plane_name }}-rabbitmq:
+    container_name: {{ plane_name }}-rabbitmq
+    image: {{ plane_docker_image_rabbitmq }}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      {{ plane_docker_volumes | to_nice_yaml(indent=2) | indent(6) }}      {{ plane_docker_volumes_rabbitmq | to_nice_yaml(indent=2) | indent(6) }}
+    environment:
+      {{ plane_docker_envs_rabbitmq | to_nice_yaml(indent=2) | indent(6) }}
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    restart: {{ plane_docker_restart_policy }}
+
+{% if plane.use_minio %}
+  {{ plane_name }}-minio:
+    container_name: {{ plane_name }}-minio
+    image: {{ plane_docker_image_minio }}
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    command: server /export --console-address ":9090"
+    volumes:
+      {{ plane_docker_volumes | to_nice_yaml(indent=2) | indent(6) }}      {{ plane_docker_volumes_minio | to_nice_yaml(indent=2) | indent(6) }}
+    environment:
+      {{ plane_docker_envs_minio | to_nice_yaml(indent=2) | indent(6) }}
+    networks:
+      - {{ plane_docker_networks | map(attribute='name') | first }}
+    restart: {{ plane_docker_restart_policy }}
+    labels:
+      traefik.enable: "{{ plane_traefik_enabled }}"
+      traefik.http.routers.{{ plane_name }}-minio.service: "{{ plane_name }}-minio"
+      traefik.http.routers.{{ plane_name }}-minio.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/uploads/`)"
+      traefik.http.routers.{{ plane_name }}-minio.tls: "{{ plane_traefik_tls_enabled }}" # NEW
+      traefik.http.routers.{{ plane_name }}-minio.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
+      traefik.http.routers.{{ plane_name }}-minio.tls.certresolver: "{{ plane_traefik_certresolver }}"
+      traefik.http.routers.{{ plane_name }}-minio.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.services.{{ plane_name }}-minio.loadbalancer.server.port: "{{ plane_traefik_minio_port }}"
+    {% endif %}
+
+networks:
+  {{ plane_docker_networks | map(attribute='name') | first }}:
+    external: true

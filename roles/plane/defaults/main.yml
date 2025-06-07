@@ -1,0 +1,263 @@
+#########################################################################
+# Title:            Sandbox: Plane                                      #
+# Author(s):        Aethenn                                             #
+# URL:              https://github.com/saltyorg/Sandbox                 #
+# --                                                                    #
+#########################################################################
+#                   GNU General Public License v3.0                     #
+#########################################################################
+---
+################################
+# Basics
+################################
+
+plane_name: plane
+
+################################
+# Paths
+################################
+
+plane_paths_folder: "{{ plane_name }}"
+plane_paths_location: "{{ server_appdata_path }}/{{ plane_paths_folder }}"
+plane_paths_folders_list:
+  - "{{ plane_paths_location }}"
+  - "{{ plane_paths_location }}/data"
+  - "{{ plane_paths_location }}/data/postgres"
+  - "{{ plane_paths_location }}/data/rabbitmq"
+  - "{{ plane_paths_location }}/data/minio"
+  - "{{ plane_paths_location }}/data/redis"
+  - "{{ plane_paths_location }}/data/logs_api"
+  - "{{ plane_paths_location }}/data/logs_worker"
+  - "{{ plane_paths_location }}/data/logs_beat-worker"
+  - "{{ plane_paths_location }}/data/logs_migrator"
+
+################################
+# Web
+################################
+
+plane_web_subdomain: "{{ plane_name }}"
+plane_web_domain: "{{ user.domain }}"
+plane_web_url: "{{ 'https://' + (plane_web_subdomain + '.' + plane_web_domain
+                      if (plane_web_subdomain | length > 0)
+                      else plane_web_domain) }}"
+plane_web_url_traefik: "{{ (plane_web_subdomain + '.' + plane_web_domain
+                      if (plane_web_subdomain | length > 0)
+                      else plane_web_domain) }}"
+
+################################
+# DNS
+################################
+
+plane_dns_record: "{{ plane_web_subdomain }}"
+plane_dns_zone: "{{ plane_web_domain }}"
+plane_dns_proxy: "{{ dns.proxied }}"
+
+################################
+# Traefik
+################################
+
+plane_traefik_middleware_default: "{{ traefik_default_middleware }}"
+plane_traefik_middleware_custom: ""
+plane_traefik_sso_middleware: "{{ traefik_default_sso_middleware }}"
+plane_traefik_certresolver: "{{ traefik_default_certresolver }}"
+plane_traefik_enabled: true
+plane_traefik_api_enabled: false
+plane_traefik_api_endpoint: ""
+plane_traefik_tls_enabled: true
+plane_traefik_web_port: "3000"
+plane_traefik_space_port: "3000"
+plane_traefik_admin_port: "3000"
+plane_traefik_live_port: "3000"
+plane_traefik_api_port: "8000"
+plane_traefik_minio_port: "9000"
+
+
+################################
+# Docker
+################################
+
+# Container
+plane_docker_container: "{{ plane_name }}"
+
+# Images
+plane_docker_image_pull: true
+plane_docker_image_tag: "latest"
+plane_docker_image:
+plane_docker_image_backend: "makeplane/plane-backend:{{ plane_docker_image_tag }}"
+plane_docker_image_web: "makeplane/plane-frontend:{{ plane_docker_image_tag }}"
+plane_docker_image_space: "makeplane/plane-space:{{ plane_docker_image_tag }}"
+plane_docker_image_admin: "makeplane/plane-admin:{{ plane_docker_image_tag }}"
+plane_docker_image_live: "makeplane/plane-live:{{ plane_docker_image_tag }}"
+plane_docker_image_postgres: "postgres:15.7-alpine"
+plane_docker_image_redis: "valkey/valkey:7.2.5-alpine"
+plane_docker_image_rabbitmq: "rabbitmq:3.13.6-management-alpine"
+plane_docker_image_minio: "minio/minio:latest"
+
+
+# Ports
+plane_docker_ports_defaults:
+  - "{{ plane_web_port }}:443"
+plane_docker_ports_custom: []
+plane_docker_ports: "{{ plane_docker_ports_defaults
+                         + plane_docker_ports_custom
+                      if (not reverse_proxy_is_enabled)
+                      else plane_docker_ports_custom }}"
+
+# Envs
+plane_docker_envs_default:
+  TZ: "{{ tz }}"
+
+plane_docker_envs_app:
+  WEB_URL: "{{ plane_web_url }}"
+  DEBUG: "{{ '0' if not plane.debug else '1' }}"
+  CORS_ALLOWED_ORIGINS: "{{ plane_web_url }}"
+  GUNICORN_WORKERS: "1"
+  USE_MINIO: "{{ '1' if plane.use_minio | default(true) else '0' }}"
+  DATABASE_URL: "postgresql://{{ plane.postgres_user }}:{{ plane.postgres_pass }}@{{ plane_name }}-postgres:5432/plane"
+  SECRET_KEY: "{{ plane.secret_key }}"
+  AMQP_URL: "amqp://{{ plane.rabbitmq_user }}:{{ plane.rabbitmq_pass }}@{{ plane_name }}-rabbitmq:5672/plane"
+  API_KEY_RATE_LIMIT: "{{ plane.api_key_rate_limit }}"
+  MINIO_ENDPOINT_SSL: "{{ '1' if plane.minio_endpoint_ssl | default(false) else '0' }}"
+
+plane_docker_envs_rabbitmq:
+  RABBITMQ_DEFAULT_USER: "{{ plane.rabbitmq_user }}"
+  RABBITMQ_DEFAULT_PASS: "{{ plane.rabbitmq_pass }}"
+  RABBITMQ_DEFAULT_VHOST: "{{ plane_name }}"
+  RABBITMQ_VHOST: "{{ plane_name }}"
+  RABBITMQ_HOST: "{{ plane_name }}-rabbitmq"
+  RABBITMQ_PORT: "5672"
+
+plane_docker_envs_postgres:
+  POSTGRES_USER: "{{ plane.postgres_user }}"
+  POSTGRES_PASSWORD: "{{ plane.postgres_pass }}"
+  POSTGRES_DB: "{{ plane_name }}"
+  PGHOST: "{{ plane_name }}-postgres"
+  PGDATABASE: "{{ plane_name }}"
+  POSTGRES_PORT: "5432"
+  PGDATA: "/var/lib/postgresql/data"
+
+plane_docker_envs_redis:
+  REDIS_HOST: "{{ plane_name }}-redis"
+  REDIS_PORT: "6379"
+  REDIS_URL: "redis://{{ plane_name }}-redis:6379/"
+
+plane_docker_envs_minio:
+  MINIO_ROOT_USER: "{{ plane.s3_keyid }}"
+  MINIO_ROOT_PASSWORD: "{{ plane.s3_secretkey }}"
+
+plane_docker_envs_s3:
+  AWS_S3_BUCKET_NAME: "{{ plane.s3_bucket_name }}"
+  AWS_ACCESS_KEY_ID: "{{ plane.s3_keyid }}"
+  AWS_SECRET_ACCESS_KEY: "{{ plane.s3_secretkey }}"
+  AWS_ENDPOINT_URL: "{{ plane.s3_endpoint_url }}"
+  AWS_REGION: "{{ plane.aws_region }}"
+
+plane_docker_envs_proxy:
+  NGINX_PORT: "443" # NEW
+  BUCKET_NAME: "{{ plane.s3_bucket_name }}"
+  FILE_SIZE_LIMIT: "{{ plane.file_size_limit }}"
+
+plane_docker_envs_live: 
+  API_BASE_URL: "http://api:8000"
+
+plane_docker_envs_all: "{{ plane_docker_envs_app
+                          | combine(plane_docker_envs_postgres)
+                          | combine(plane_docker_envs_redis)
+                          | combine(plane_docker_envs_minio)
+                          | combine(plane_docker_envs_s3) 
+                          | combine(plane_docker_envs_proxy)}}"
+
+
+plane_docker_envs_custom: {}
+plane_docker_envs: "{{ plane_docker_envs_default
+                      | combine(plane_docker_envs_custom) }}"
+
+# Commands
+plane_docker_commands_default: []
+plane_docker_commands_custom: []
+plane_docker_commands: "{{ plane_docker_commands_default
+                          + plane_docker_commands_custom }}"
+
+# Volumes
+plane_docker_volumes_default:
+  - "/etc/localtime:/etc/localtime:ro"
+
+plane_docker_volumes_postgres:
+  - "{{ plane_paths_location }}/data/postgres:/var/lib/postgresql/data"
+
+plane_docker_volumes_redis:
+  - "{{ plane_paths_location }}/data/redis:/data"
+
+plane_docker_volumes_rabbitmq:
+  - "{{ plane_paths_location }}/data/rabbitmq:/var/lib/rabbitmq"
+
+plane_docker_volumes_minio:
+  - "{{ plane_paths_location }}/data/minio:/export"
+
+plane_docker_volumes_api:
+  - "{{ plane_paths_location }}/data/logs_api:/code/plane/logs"
+
+plane_docker_volumes_worker:
+  - "{{ plane_paths_location }}/data/logs_worker:/code/plane/logs"
+
+plane_docker_volumes_beat_worker:
+  - "{{ plane_paths_location }}/data/logs_beat-worker:/code/plane/logs"
+
+plane_docker_volumes_migrator:
+  - "{{ plane_paths_location }}/data/logs_migrator:/code/plane/logs"
+
+plane_docker_volumes_custom: []
+plane_docker_volumes: "{{ plane_docker_volumes_default
+                         + plane_docker_volumes_custom }}"
+
+# Devices
+plane_docker_devices_default: []
+plane_docker_devices_custom: []
+plane_docker_devices: "{{ plane_docker_devices_default
+                         + plane_docker_devices_custom }}"
+
+# Hosts
+plane_docker_hosts_default: []
+plane_docker_hosts_custom: []
+plane_docker_hosts: "{{ docker_hosts_common
+                       | combine(plane_docker_hosts_default)
+                       | combine(plane_docker_hosts_custom) }}"
+
+# Labels
+plane_docker_labels_default: {}
+plane_docker_labels_custom: {}
+plane_docker_labels: "{{ docker_labels_common
+                        | combine(plane_docker_labels_default)
+                        | combine(plane_docker_labels_custom) }}"
+
+# Hostname
+plane_docker_hostname: "{{ plane_name }}"
+
+# Networks
+plane_docker_networks_alias: "{{ plane_name }}"
+plane_docker_networks_default: []
+plane_docker_networks_custom: []
+plane_docker_networks: "{{ docker_networks_common
+                          + plane_docker_networks_default
+                          + plane_docker_networks_custom }}"
+
+# Capabilities
+plane_docker_capabilities_default: []
+plane_docker_capabilities_custom: []
+plane_docker_capabilities: "{{ plane_docker_capabilities_default
+                              + plane_docker_capabilities_custom }}"
+
+# Security Opts
+plane_docker_security_opts_default: []
+plane_docker_security_opts_custom: []
+plane_docker_security_opts: "{{ plane_docker_security_opts_default
+                               + plane_docker_security_opts_custom }}"
+
+# Restart Policy
+plane_docker_restart_policy: unless-stopped
+
+# State
+plane_docker_state: started
+
+# State of service
+plane_service_state: started

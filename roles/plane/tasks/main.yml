@@ -1,0 +1,48 @@
+#########################################################################
+# Title:            Sandbox: Plane                                      #
+# Author(s):        Aethenn                                             #
+# URL:              https://github.com/saltyorg/Sandbox                 #
+# --                                                                    #
+#########################################################################
+#                   GNU General Public License v3.0                     #
+#########################################################################
+---
+- name: Add DNS record
+  ansible.builtin.include_tasks: "{{ resources_tasks_path }}/dns/tasker.yml"
+  vars:
+    dns_record: "{{ lookup('vars', role_name + '_dns_record') }}"
+    dns_zone: "{{ lookup('vars', role_name + '_dns_zone') }}"
+    dns_proxy: "{{ lookup('vars', role_name + '_dns_proxy') }}"
+
+- name: Remove existing Docker containers
+  ansible.builtin.include_tasks: "{{ resources_tasks_path }}/docker/remove_docker_container.yml"
+  loop:
+    - "{{ plane_name }}-postgres"
+    - "{{ plane_name }}-redis"
+    - "{{ plane_name }}-minio"
+    - "{{ plane_name }}-rabbitmq"
+    - "{{ plane_name }}-migrator"
+    - "{{ plane_name }}-admin"
+    - "{{ plane_name }}-web"
+    - "{{ plane_name }}-api"
+    - "{{ plane_name }}-worker"
+    - "{{ plane_name }}-beat-worker"
+    - "{{ plane_name }}-space"
+    - "{{ plane_name }}-live"
+
+- name: Create directories
+  ansible.builtin.include_tasks: "{{ resources_tasks_path }}/directories/create_directories.yml"
+
+- name: Create docker-compose.yml file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ plane_paths_location }}/docker-compose.yml"
+    owner: "{{ user.name }}"
+    group: "{{ user.name }}"
+    mode: 0755
+
+- name: Create Docker container
+  community.docker.docker_compose_v2:
+    project_src: "{{ plane_paths_location }}"
+    state: present
+    recreate: always
