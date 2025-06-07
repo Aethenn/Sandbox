@@ -39,7 +39,7 @@
     dest: "{{ plane_paths_location }}/docker-compose.yml"
     owner: "{{ user.name }}"
     group: "{{ user.name }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Create Docker container
   community.docker.docker_compose_v2:

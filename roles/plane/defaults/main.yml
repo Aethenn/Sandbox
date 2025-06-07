@@ -157,15 +157,15 @@ plane_docker_envs_proxy:
   BUCKET_NAME: "{{ plane.s3_bucket_name }}"
   FILE_SIZE_LIMIT: "{{ plane.file_size_limit }}"
 
-plane_docker_envs_live: 
+plane_docker_envs_live:
   API_BASE_URL: "http://api:8000"
 
 plane_docker_envs_all: "{{ plane_docker_envs_app
                           | combine(plane_docker_envs_postgres)
                           | combine(plane_docker_envs_redis)
                           | combine(plane_docker_envs_minio)
-                          | combine(plane_docker_envs_s3) 
-                          | combine(plane_docker_envs_proxy)}}"
+                          | combine(plane_docker_envs_s3)
+                          | combine(plane_docker_envs_proxy) }}"
 
 
 plane_docker_envs_custom: {}

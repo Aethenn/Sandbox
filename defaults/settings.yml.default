@@ -42,6 +42,22 @@ moviematch:
   plex_url: http://plex:32400
 notifiarr:
   api_key: "api-key-from-notifiarr.com"
+plane:
+  debug: "false"
+  postgres_user: "plane"
+  postgres_pass: "YOUR_SECRET_DB_PASSWORD"
+  rabbitmq_user: "plane"
+  rabbitmq_pass: "YOUR_SECRET_RABBITMQ_PASSWORD"
+  use_minio: "true"
+  s3_keyid: "plane-key"
+  s3_secretkey: "YOUR_S3_SECRET_KEY"
+  s3_bucket_name: "uploads"
+  s3_endpoint_url: "http://plane-minio:9000"
+  aws_region:
+  minio_endpoint_ssl: "false"
+  secret_key: "YOUR_SECRET_KEY"
+  api_key_rate_limit: "60/minute"
+  file_size_limit: "5242880"
 qbit_manage:
   qbt_run: "false"
   qbt_schedule: "30"
@@ -82,22 +98,6 @@ transmissionvpn:
   vpn_user:
   vpn_pass:
   vpn_prov:
-plane:
-  debug: "false"
-  postgres_user: "plane"
-  postgres_pass: "YOUR_SECRET_DB_PASSWORD"
-  rabbitmq_user: "plane"
-  rabbitmq_pass: "YOUR_SECRET_RABBITMQ_PASSWORD"
-  use_minio: "true"
-  s3_keyid: "plane-key"
-  s3_secretkey: "YOUR_S3_SECRET_KEY"
-  s3_bucket_name: "uploads"
-  s3_endpoint_url: "http://plane-minio:9000"
-  aws_region:
-  minio_endpoint_ssl: "false"
-  secret_key: "YOUR_SECRET_KEY"
-  api_key_rate_limit: "60/minute"
-  file_size_limit: "5242880"
 your_spotify:
   public_key:
   secret_key:
