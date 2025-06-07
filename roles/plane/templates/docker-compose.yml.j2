@@ -265,7 +265,7 @@ services:
       traefik.http.routers.{{ plane_name }}-minio.tls.certresolver: "{{ plane_traefik_certresolver }}"
       traefik.http.routers.{{ plane_name }}-minio.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
       traefik.http.services.{{ plane_name }}-minio.loadbalancer.server.port: "{{ plane_traefik_minio_port }}"
-    {% endif %}
+{% endif %}
 
 networks:
   {{ plane_docker_networks | map(attribute='name') | first }}:
