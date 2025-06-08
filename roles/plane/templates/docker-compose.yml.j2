@@ -16,7 +16,10 @@ services:
     labels:
       traefik.enable: "{{ plane_traefik_enabled }}"
       traefik.http.routers.{{ plane_name }}-web.rule: "Host(`{{ plane_web_url_traefik }}`)"
-      traefik.http.routers.{{ plane_name }}-web.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-web.middlewares: "{{ plane_traefik_middleware_default 
+                                                                 + ',' + plane_traefik_middleware_custom 
+                                                              if (plane_traefik_middleware_custom | length > 0) 
+                                                              else plane_traefik_middleware_default }}"
       traefik.http.routers.{{ plane_name }}-web.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
       traefik.http.routers.{{ plane_name }}-web.tls: "{{ plane_traefik_tls_enabled }}"
       traefik.http.routers.{{ plane_name }}-web.tls.certresolver: "{{ plane_traefik_certresolver }}"
@@ -41,7 +44,10 @@ services:
     labels:
       traefik.enable: "{{ plane_traefik_enabled }}"
       traefik.http.routers.{{ plane_name }}-space.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/spaces/`)"
-      traefik.http.routers.{{ plane_name }}-space.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-space.middlewares: "{{ plane_traefik_middleware_default 
+                                                                   + ',' + plane_traefik_middleware_custom 
+                                                                if (plane_traefik_middleware_custom | length > 0) 
+                                                                else plane_traefik_middleware_default }}"
       traefik.http.routers.{{ plane_name }}-space.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
       traefik.http.routers.{{ plane_name }}-space.service: "{{ plane_name }}-space"
       traefik.http.routers.{{ plane_name }}-space.tls: "{{ plane_traefik_tls_enabled }}"
@@ -65,7 +71,10 @@ services:
     labels:
       traefik.enable: "{{ plane_traefik_enabled }}"
       traefik.http.routers.{{ plane_name }}-admin.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/god-mode/`)"
-      traefik.http.routers.{{ plane_name }}-admin.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-admin.middlewares: "{{ plane_traefik_middleware_default 
+                                                                   + ',' + plane_traefik_middleware_custom 
+                                                                if (plane_traefik_middleware_custom | length > 0) 
+                                                                else plane_traefik_middleware_default }}"
       traefik.http.routers.{{ plane_name }}-admin.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
       traefik.http.routers.{{ plane_name }}-admin.service: "{{ plane_name }}-admin"
       traefik.http.routers.{{ plane_name }}-admin.tls: "{{ plane_traefik_tls_enabled }}"
@@ -91,9 +100,12 @@ services:
     labels:
       traefik.enable: "{{ plane_traefik_enabled }}"
       traefik.http.routers.{{ plane_name }}-live.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/live/`)"
-      traefik.http.routers.{{ plane_name }}-live.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-live.middlewares: "{{ plane_traefik_middleware_default 
+                                                                  + ',' + plane_traefik_middleware_custom 
+                                                               if (plane_traefik_middleware_custom | length > 0) 
+                                                               else plane_traefik_middleware_default }}"
       traefik.http.routers.{{ plane_name }}-live.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
-      traefik.http.routers.{{ plane_name }}-live.service: "{{ plane_name }}-live" # NEW
+      traefik.http.routers.{{ plane_name }}-live.service: "{{ plane_name }}-live"
       traefik.http.routers.{{ plane_name }}-live.tls: "{{ plane_traefik_tls_enabled }}"
       traefik.http.routers.{{ plane_name }}-live.tls.certresolver: "{{ plane_traefik_certresolver }}"
       traefik.http.services.{{ plane_name }}-live.loadbalancer.server.port: "{{ plane_traefik_live_port }}"
@@ -120,17 +132,16 @@ services:
     labels:
       traefik.enable: "{{ plane_traefik_enabled }}"
       traefik.http.routers.{{ plane_name }}-api.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/api/`) || PathPrefix(`/auth/`)"
-      traefik.http.routers.{{ plane_name }}-api.middlewares: "{{ plane_name }}-api-cors-headers" # NEW
-      # traefik.http.routers.{{ plane_name }}-api.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-api.middlewares: "{{ plane_name }}-api-cors-headers" 
       traefik.http.routers.{{ plane_name }}-api.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
-      traefik.http.routers.{{ plane_name }}-api.service: "{{ plane_name }}-api" # NEW
+      traefik.http.routers.{{ plane_name }}-api.service: "{{ plane_name }}-api" 
       traefik.http.routers.{{ plane_name }}-api.tls: "{{ plane_traefik_tls_enabled }}"
       traefik.http.routers.{{ plane_name }}-api.tls.certresolver: "{{ plane_traefik_certresolver }}"
       traefik.http.services.{{ plane_name }}-api.loadbalancer.server.port: "{{ plane_traefik_api_port }}"
-      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolallowmethods: "GET,OPTIONS,PUT,POST,DELETE,PATCH" # NEW
-      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolalloworiginlist: "{{ plane_web_url }}" # NEW
-      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolallowcredentials: "true" # NEW
-      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolallowheaders: "*" # NEW
+      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolallowmethods: "GET,OPTIONS,PUT,POST,DELETE,PATCH" 
+      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolalloworiginlist: "{{ plane_web_url }}" 
+      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolallowcredentials: "true" 
+      traefik.http.middlewares.{{ plane_name }}-api-cors-headers.headers.accesscontrolallowheaders: "*" 
 
 
   {{ plane_name }}-worker:
@@ -260,10 +271,13 @@ services:
       traefik.enable: "{{ plane_traefik_enabled }}"
       traefik.http.routers.{{ plane_name }}-minio.service: "{{ plane_name }}-minio"
       traefik.http.routers.{{ plane_name }}-minio.rule: "Host(`{{ plane_web_url_traefik }}`) && PathPrefix(`/uploads/`)"
-      traefik.http.routers.{{ plane_name }}-minio.tls: "{{ plane_traefik_tls_enabled }}" # NEW
+      traefik.http.routers.{{ plane_name }}-minio.tls: "{{ plane_traefik_tls_enabled }}" 
       traefik.http.routers.{{ plane_name }}-minio.entrypoints: "{{ traefik_entrypoint_websecure_default }}"
       traefik.http.routers.{{ plane_name }}-minio.tls.certresolver: "{{ plane_traefik_certresolver }}"
-      traefik.http.routers.{{ plane_name }}-minio.middlewares: "{{ plane_traefik_middleware_default + ',' + plane_traefik_middleware_custom if (plane_traefik_middleware_custom | length > 0) else plane_traefik_middleware_default }}"
+      traefik.http.routers.{{ plane_name }}-minio.middlewares: "{{ plane_traefik_middleware_default + ',' 
+                                                                   + plane_traefik_middleware_custom 
+                                                                if (plane_traefik_middleware_custom | length > 0) 
+                                                                else plane_traefik_middleware_default }}"
       traefik.http.services.{{ plane_name }}-minio.loadbalancer.server.port: "{{ plane_traefik_minio_port }}"
   {% endif %}
 

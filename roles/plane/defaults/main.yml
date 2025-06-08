@@ -38,11 +38,11 @@ plane_paths_folders_list:
 plane_web_subdomain: "{{ plane_name }}"
 plane_web_domain: "{{ user.domain }}"
 plane_web_url: "{{ 'https://' + (plane_web_subdomain + '.' + plane_web_domain
-                      if (plane_web_subdomain | length > 0)
-                      else plane_web_domain) }}"
+                if (plane_web_subdomain | length > 0)
+                else plane_web_domain) }}"
 plane_web_url_traefik: "{{ (plane_web_subdomain + '.' + plane_web_domain
-                      if (plane_web_subdomain | length > 0)
-                      else plane_web_domain) }}"
+                        if (plane_web_subdomain | length > 0)
+                        else plane_web_domain) }}"
 
 ################################
 # DNS
@@ -99,9 +99,9 @@ plane_docker_ports_defaults:
   - "{{ plane_web_port }}:443"
 plane_docker_ports_custom: []
 plane_docker_ports: "{{ plane_docker_ports_defaults
-                         + plane_docker_ports_custom
-                      if (not reverse_proxy_is_enabled)
-                      else plane_docker_ports_custom }}"
+                        + plane_docker_ports_custom
+                     if (not reverse_proxy_is_enabled)
+                     else plane_docker_ports_custom }}"
 
 # Envs
 plane_docker_envs_default:
@@ -109,15 +109,21 @@ plane_docker_envs_default:
 
 plane_docker_envs_app:
   WEB_URL: "{{ plane_web_url }}"
-  DEBUG: "{{ '0' if not plane.debug else '1' }}"
+  DEBUG: "{{ '0' 
+          if not plane.debug 
+          else '1' }}"
   CORS_ALLOWED_ORIGINS: "{{ plane_web_url }}"
   GUNICORN_WORKERS: "1"
-  USE_MINIO: "{{ '1' if plane.use_minio | default(true) else '0' }}"
+  USE_MINIO: "{{ '1' 
+              if plane.use_minio | default(true) 
+              else '0' }}"
   DATABASE_URL: "postgresql://{{ plane.postgres_user }}:{{ plane.postgres_pass }}@{{ plane_name }}-postgres:5432/plane"
   SECRET_KEY: "{{ plane.secret_key }}"
   AMQP_URL: "amqp://{{ plane.rabbitmq_user }}:{{ plane.rabbitmq_pass }}@{{ plane_name }}-rabbitmq:5672/plane"
   API_KEY_RATE_LIMIT: "{{ plane.api_key_rate_limit }}"
-  MINIO_ENDPOINT_SSL: "{{ '1' if plane.minio_endpoint_ssl | default(false) else '0' }}"
+  MINIO_ENDPOINT_SSL: "{{ '1' 
+                       if plane.minio_endpoint_ssl | default(false) 
+                       else '0' }}"
 
 plane_docker_envs_rabbitmq:
   RABBITMQ_DEFAULT_USER: "{{ plane.rabbitmq_user }}"
@@ -161,22 +167,22 @@ plane_docker_envs_live:
   API_BASE_URL: "http://api:8000"
 
 plane_docker_envs_all: "{{ plane_docker_envs_app
-                          | combine(plane_docker_envs_postgres)
-                          | combine(plane_docker_envs_redis)
-                          | combine(plane_docker_envs_minio)
-                          | combine(plane_docker_envs_s3)
-                          | combine(plane_docker_envs_proxy) }}"
+                           | combine(plane_docker_envs_postgres)
+                           | combine(plane_docker_envs_redis)
+                           | combine(plane_docker_envs_minio)
+                           | combine(plane_docker_envs_s3)
+                           | combine(plane_docker_envs_proxy) }}"
 
 
 plane_docker_envs_custom: {}
 plane_docker_envs: "{{ plane_docker_envs_default
-                      | combine(plane_docker_envs_custom) }}"
+                       | combine(plane_docker_envs_custom) }}"
 
 # Commands
 plane_docker_commands_default: []
 plane_docker_commands_custom: []
 plane_docker_commands: "{{ plane_docker_commands_default
-                          + plane_docker_commands_custom }}"
+                           + plane_docker_commands_custom }}"
 
 # Volumes
 plane_docker_volumes_default:
@@ -208,27 +214,27 @@ plane_docker_volumes_migrator:
 
 plane_docker_volumes_custom: []
 plane_docker_volumes: "{{ plane_docker_volumes_default
-                         + plane_docker_volumes_custom }}"
+                          + plane_docker_volumes_custom }}"
 
 # Devices
 plane_docker_devices_default: []
 plane_docker_devices_custom: []
 plane_docker_devices: "{{ plane_docker_devices_default
-                         + plane_docker_devices_custom }}"
+                          + plane_docker_devices_custom }}"
 
 # Hosts
 plane_docker_hosts_default: []
 plane_docker_hosts_custom: []
 plane_docker_hosts: "{{ docker_hosts_common
-                       | combine(plane_docker_hosts_default)
-                       | combine(plane_docker_hosts_custom) }}"
+                        | combine(plane_docker_hosts_default)
+                        | combine(plane_docker_hosts_custom) }}"
 
 # Labels
 plane_docker_labels_default: {}
 plane_docker_labels_custom: {}
 plane_docker_labels: "{{ docker_labels_common
-                        | combine(plane_docker_labels_default)
-                        | combine(plane_docker_labels_custom) }}"
+                         | combine(plane_docker_labels_default)
+                         | combine(plane_docker_labels_custom) }}"
 
 # Hostname
 plane_docker_hostname: "{{ plane_name }}"
@@ -238,20 +244,20 @@ plane_docker_networks_alias: "{{ plane_name }}"
 plane_docker_networks_default: []
 plane_docker_networks_custom: []
 plane_docker_networks: "{{ docker_networks_common
-                          + plane_docker_networks_default
-                          + plane_docker_networks_custom }}"
+                           + plane_docker_networks_default
+                           + plane_docker_networks_custom }}"
 
 # Capabilities
 plane_docker_capabilities_default: []
 plane_docker_capabilities_custom: []
 plane_docker_capabilities: "{{ plane_docker_capabilities_default
-                              + plane_docker_capabilities_custom }}"
+                               + plane_docker_capabilities_custom }}"
 
 # Security Opts
 plane_docker_security_opts_default: []
 plane_docker_security_opts_custom: []
 plane_docker_security_opts: "{{ plane_docker_security_opts_default
-                               + plane_docker_security_opts_custom }}"
+                                + plane_docker_security_opts_custom }}"
 
 # Restart Policy
 plane_docker_restart_policy: unless-stopped
